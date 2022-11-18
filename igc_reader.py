@@ -18,7 +18,6 @@ class IGCReader:
         self.altitude_gnss = self.data_formated[:,3]
         self.altitude_baro = self.data_formated[:,4]
 
-
     def read_record(self, rec):
         if rec.startswith("B"):
             self.read_b_record(rec)
@@ -34,6 +33,10 @@ class IGCReader:
             minute=int(rec[3:5]),
             second=int(rec[5:7])
         ).timestamp())
+        if len(rec) < 35:
+            raise OSError("Truncated record")
+        if not rec[14] in ("S", "N") or not rec[23] in ("E", "W"):
+            raise OSError("Can't decode data")
         lat = int(rec[7:9]) + int(rec[9:14])/1000/60
         if rec[14] == "S":
             lat = -lat
@@ -45,11 +48,15 @@ class IGCReader:
         self.data_formated.append((time, lat, lon, gnss_alt, baro_alt))
     
     def read_h_record(self, rec):
-        if rec.startswith("HTDFEDATE"):
-            self.day = dt.date(day=int(rec[5:7]), month=int(rec[7:9]), year=2000+int(rec[9:11]))
         if rec.startswith("HFDTE"):
-            self.day = dt.date(day=int(rec[10:12]), month=int(rec[12:14]), year=2000+int(rec[14:16]))
-
+            if rec.startswith("HFDTEDATE"):
+                rec = rec[5:]
+            try:
+                self.day = dt.date(day=int(rec[5:7]), month=int(rec[7:9]), year=2000+int(rec[9:11]))
+            except ValueError as e:
+                print(f"{e}, filling with 01/01/2000")
+            self.day = dt.date(day=1, month=1, year=2000)
+             
     def display_track(self):
         ax = plt.figure().add_subplot(projection='3d')
         ax.plot(
@@ -66,5 +73,5 @@ class IGCReader:
         return [p[noindex] for p in self.data_formated]
 
     def mean_time_delta(self):
-        return np.mean(self.timestamp[1:]-self.timestamp[:-1])
+        return np.mean(np.diff(self.timestamp))
         
