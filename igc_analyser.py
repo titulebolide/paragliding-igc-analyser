@@ -33,23 +33,31 @@ class TrackAnalyser:
         self.track = IGCReader(filename)
         self.track_mean_time_delta = self.track.mean_time_delta()
 
-    def process(self):
-        self._process_track()
+    def process(self, use_baro = True):
+        self._process_track(use_baro = use_baro)
         self._calc_glide_mask()
 
-    def check_track_sanity(self):
-        if self.track_mean_time_delta > 4 or self.track_mean_time_delta < 0.001:
+    def check_track_sanity(self, use_baro = True):
+        """
+        checks track sanity
+        returns 0 is track is sane
+        returns another code depending on the reason of the insaninty
+        """
+        altitude = self.track.altitude_baro if use_baro else self.track.altitude_gnss
+        if self.track_mean_time_delta > 6 or self.track_mean_time_delta < 0.001:
             # Bad time deltas, to high or (abnormally) negative or low
-            return False
+            return 1
         if np.min(np.diff(self.track.timestamp)) < 0:
             # the diff between consecutive time deltas must always be positive
-            return False
-        if np.max(self.track.altitude_gnss)-np.min(self.track.altitude_gnss) < 100:
-            return False
-        return True
+            return 2
+        if np.max(altitude)-np.min(altitude) < 10:
+            # no meaningful altitude data
+            return 3
+        return 0
 
-    def _process_track(self):
+    def _process_track(self, use_baro = True):
         frame_len = round(self.frame_len_sec/self.track_mean_time_delta)
+        altitude = self.track.altitude_baro if use_baro else self.track.altitude_gnss
         glide_angle = []
         glide_angle_m = [0] #sweeping mean
         turn = []
@@ -62,7 +70,7 @@ class TrackAnalyser:
         for i in range(len(self.track.timestamp)-1):
             diff_lat = self.track.latitude[i+1] - self.track.latitude[i]
             diff_lon = self.track.longitude[i+1] - self.track.longitude[i]
-            ver_dist = self.track.altitude_gnss[i+1] - self.track.altitude_gnss[i]
+            ver_dist = altitude[i+1] - altitude[i]
             hor_dist = haversine((self.track.latitude[i], self.track.longitude[i]), (self.track.latitude[i+1], self.track.longitude[i+1]))*1000
 
             cum_distance.append(cum_distance[-1] + hor_dist)
@@ -162,7 +170,7 @@ class TrackAnalyser:
 
     def plot_glide_mask_debug(self):
         plt.subplot(511)
-        plt.plot(self.cumulative_distance, self.track.altitude_gnss)
+        plt.plot(self.cumulative_distance, self.track.altitude_baro)
         plt.subplot(512)
         plt.plot(self.timestamps,self.glide_mask, 'b')
         plt.plot(self.timestamps,self._unfiltered_glide_mask, 'r')
@@ -187,7 +195,7 @@ class TrackAnalyser:
 
     def _temp_debug_turn(self):
         plt.subplot(411)
-        plt.plot(self.cumulative_distance, self.track.altitude_gnss)
+        plt.plot(self.cumulative_distance, self.track.altitude_baro)
         plt.subplot(412)
         plt.plot(self.timestamps, self.heading)
         plt.subplot(413)
