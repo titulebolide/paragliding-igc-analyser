@@ -41,7 +41,7 @@ def post_process_analysis(flights):
     wings_perf = {}
     logging.info(f"Calculating average and standart deviation on {total_flights_to_analyse} flights")
     no_iter = 0
-    for wing_id in enumerate(wings_to_flight):
+    for wing_id in wings_to_flight:
         wings_perf[wing_id] = {}
         sum = 0
         sum_sq = 0
@@ -67,3 +67,6 @@ def main():
     with open(flight_analysis_file, "r") as f:
         flights = json.load(f)
     post_process_analysis(flights)
+
+if __name__ == "__main__":
+    main()
