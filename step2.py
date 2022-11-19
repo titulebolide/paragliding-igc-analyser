@@ -8,6 +8,12 @@ from bs4 import BeautifulSoup
 import requests
 import json
 import re
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
+flight_analysis_file = "../data/full/flights_analysed.json"
+output_file = "../data/full/flights_post_processed.json"
 
 def get_wing_details(wing_id):
     html = requests.get("https://parapente.ffvl.fr/cfd/liste/aile/" + str(wing_id)).text
@@ -16,14 +22,10 @@ def get_wing_details(wing_id):
     clas = soup.tbody.find("tr").findAll("td")[9].a.font.text
     return name, clas
 
-flight_analysis_file = "../data/full/flights_analysed.json"
-output_file = "../data/full/flights_post_processed.json"
-
-with open(flight_analysis_file, "r") as f:
-    flights = json.load(f)
-
-def post_process_analysis():
+def post_process_analysis(flights):
     wings_to_flight = {}
+    total_flights_to_analyse = 0
+    logging.info("Reindexing")
     for id,f in flights.items():
         if f is None:
             continue
@@ -34,9 +36,12 @@ def post_process_analysis():
             wings_to_flight[wing_id].append(id)
         else:
             wings_to_flight[wing_id] = [id]
+        total_flights_to_analyse += 1
 
     wings_perf = {}
-    for wing_id in wings_to_flight:
+    logging.info(f"Calculating average and standart deviation on {total_flights_to_analyse} flights")
+    no_iter = 0
+    for wing_id in enumerate(wings_to_flight):
         wings_perf[wing_id] = {}
         sum = 0
         sum_sq = 0
@@ -48,8 +53,17 @@ def post_process_analysis():
             sum += ga*sampling
             sum_sq += (ga*sampling)**2
             weight += sampling
+            if no_iter % 100:
+                logging.info(f"{round(no_iter/total_flights_to_analyse*100,1)} %")
+            no_iter += 1
         wings_perf[wing_id]['mean'] = sum/weight
         wings_perf[wing_id]['dev'] = ((sum_sq/weight) - (sum/weight)**2)**(1/2)
 
     with open(output_file, "w") as f:
         json.dump(wings_perf, f)
+
+def main():
+    logging.info("Loading flight file")
+    with open(flight_analysis_file, "r") as f:
+        flights = json.load(f)
+    post_process_analysis(flights)
