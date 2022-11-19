@@ -9,6 +9,7 @@ import requests
 import json
 import re
 import logging
+import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 
@@ -43,21 +44,21 @@ def post_process_analysis(flights):
     no_iter = 0
     for wing_id in wings_to_flight:
         wings_perf[wing_id] = {}
-        sum = 0
+        sum_av = 0
         sum_sq = 0
         weight = 0
         for flight_id in wings_to_flight[wing_id]:
             f = flights[flight_id]
             ga = f['glide_angles']
             sampling = f['sampling']
-            sum += ga*sampling
-            sum_sq += (ga*sampling)**2
-            weight += sampling
+            sum_av += np.sum(ga)*sampling
+            sum_sq += np.sum(ga**2)*sampling
+            weight += sampling*len(ga)
             if no_iter % 100:
                 logging.info(f"{round(no_iter/total_flights_to_analyse*100,1)} %")
             no_iter += 1
-        wings_perf[wing_id]['mean'] = sum/weight
-        wings_perf[wing_id]['dev'] = ((sum_sq/weight) - (sum/weight)**2)**(1/2)
+        wings_perf[wing_id]['mean'] = sum_av/weight
+        wings_perf[wing_id]['dev'] = ((sum_sq/weight) - (sum_av/weight)**2)**(1/2)
 
     with open(output_file, "w") as f:
         json.dump(wings_perf, f)
