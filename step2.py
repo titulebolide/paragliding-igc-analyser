@@ -6,6 +6,7 @@ as well as the standard deviation
 
 from bs4 import BeautifulSoup
 import requests
+import json
 import re
 
 def get_wing_details(wing_id):
@@ -15,7 +16,7 @@ def get_wing_details(wing_id):
     clas = soup.tbody.find("tr").findAll("td")[9].a.font.text
     return name, clas
 
-flight_data_file = "../data/full/flights_analysed.json"
+flight_analysis_file = "../data/full/flights_analysed.json"
 output_file = "../data/full/flights_post_processed.json"
 
 with open(flight_analysis_file, "r") as f:
