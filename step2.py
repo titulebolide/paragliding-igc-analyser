@@ -61,14 +61,19 @@ def post_process_analysis(flights):
         wings_perf[wing_id]['dev_hist'] = std_deviation
         wings_perf[wing_id]['confidence'] = confidence_95
 
-    with open(output_file, "w") as f:
-        pickle.dump(wings_perf, f)
+    return wings_perf
+
 
 def main():
     logging.info("Loading flight file")
-    with open(input_file, "rb") as f:
+    with open(input_file, "r") as f:
         flights = json.load(f)
-    post_process_analysis(flights)
+
+    wings_perf = post_process_analysis(flights)
+
+    logging.info("Saving results")
+    with open(output_file, "wb") as f:
+        pickle.dump(wings_perf, f)
 
 if __name__ == "__main__":
     main()
