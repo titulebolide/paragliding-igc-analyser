@@ -50,7 +50,7 @@ def post_process_analysis(flights):
             sum_sq += np.sum(ga**2)*sampling
             weight += sampling*len(ga)
             nb_sample += 1
-            if no_iter % 100:
+            if no_iter % 1000:
                 logging.info(f"{round(no_iter/total_flights_to_analyse*100,1)} %")
             no_iter += 1
 
@@ -66,7 +66,7 @@ def post_process_analysis(flights):
 
 def main():
     logging.info("Loading flight file")
-    with open(input_file, "r") as f:
+    with open(input_file, "rb") as f:
         flights = json.load(f)
     post_process_analysis(flights)
 
