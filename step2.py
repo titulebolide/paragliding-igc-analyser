@@ -7,21 +7,15 @@ as well as the standard deviation
 from bs4 import BeautifulSoup
 import requests
 import json
+import pickle
 import re
 import logging
 import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 
-flight_analysis_file = "../data/full/flights_analysed.json"
-output_file = "../data/full/flights_post_processed.json"
-
-def get_wing_details(wing_id):
-    html = requests.get("https://parapente.ffvl.fr/cfd/liste/aile/" + str(wing_id)).text
-    soup = BeautifulSoup(html, 'html.parser')
-    name = re.compile("avec une (.*) \| Parapente").findall(soup.find('title').text)[0]
-    clas = soup.tbody.find("tr").findAll("td")[9].a.font.text
-    return name, clas
+input_file = "../data/full/flights_analysed.json"
+output_file = "../data/full/flights_post_processed.dat"
 
 def post_process_analysis(flights):
     wings_to_flight = {}
@@ -47,6 +41,7 @@ def post_process_analysis(flights):
         sum_av = 0
         sum_sq = 0
         weight = 0
+        nb_sample = 0
         for flight_id in wings_to_flight[wing_id]:
             f = flights[flight_id]
             ga = np.array(f['glide_angles'])
@@ -54,18 +49,24 @@ def post_process_analysis(flights):
             sum_av += np.sum(ga)*sampling
             sum_sq += np.sum(ga**2)*sampling
             weight += sampling*len(ga)
+            nb_sample += 1
             if no_iter % 100:
                 logging.info(f"{round(no_iter/total_flights_to_analyse*100,1)} %")
             no_iter += 1
-        wings_perf[wing_id]['mean'] = sum_av/weight
-        wings_perf[wing_id]['dev'] = ((sum_sq/weight) - (sum_av/weight)**2)**(1/2)
+
+        mean = sum_av/weight
+        std_deviation = ((sum_sq/weight) - (mean)**2)**(1/2)
+        confidence_95 = 2*std_deviation/nb_sample**(1/2) # https://fr.wikipedia.org/wiki/Intervalle_de_confiance#Estimation_d'une_moyenne
+        wings_perf[wing_id]['mean'] = mean
+        wings_perf[wing_id]['dev_hist'] = std_deviation
+        wings_perf[wing_id]['confidence'] = confidence_95
 
     with open(output_file, "w") as f:
-        json.dump(wings_perf, f)
+        pickle.dump(wings_perf, f)
 
 def main():
     logging.info("Loading flight file")
-    with open(flight_analysis_file, "r") as f:
+    with open(input_file, "r") as f:
         flights = json.load(f)
     post_process_analysis(flights)
 
