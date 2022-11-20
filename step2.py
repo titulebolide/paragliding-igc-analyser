@@ -49,7 +49,7 @@ def post_process_analysis(flights):
         weight = 0
         for flight_id in wings_to_flight[wing_id]:
             f = flights[flight_id]
-            ga = f['glide_angles']
+            ga = np.array(f['glide_angles'])
             sampling = f['sampling']
             sum_av += np.sum(ga)*sampling
             sum_sq += np.sum(ga**2)*sampling

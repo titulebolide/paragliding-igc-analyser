@@ -62,7 +62,7 @@ class IGCReader:
         ax.plot(
             self.latitude,    
             self.longitude,    
-            self.altitude_gnss,    
+            self.altitude_baro,    
         )
         plt.show()
         plt.plot(self.altitude_gnss)
