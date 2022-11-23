@@ -49,7 +49,7 @@ def post_process_analysis(flights):
             sum_av += np.sum(ga)*sampling
             sum_sq += np.sum(ga**2)*sampling
             weight += sampling*len(ga)
-            nb_sample += 1
+            nb_sample += len(ga)
             if no_iter % 10000 == 0:
                 logging.info(f"{round(no_iter/total_flights_to_analyse*100,1)} %")
             no_iter += 1
