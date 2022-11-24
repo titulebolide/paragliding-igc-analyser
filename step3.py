@@ -53,14 +53,33 @@ wd.load_cache()
 data = []
 nbw = len(wings)
 classes = set()
+keep_wing = "hook"
+
+clas_to_name = {
+    "A": ("A", '#316625'), 
+    "bi": ("Biplace", 'green'), 
+    "B": ("B", '#37AD00'), 
+    "C": ("C", '#FFB300'), 
+    "D": ("D", '#ba2320'), 
+    "K": ("CCC", '#723277'), 
+    "O": ("No Certification", '#000000'),
+    "S": (keep_wing.title(), "blue") # false class for the wing we want to keep
+}
+
 for now, wid in enumerate(wings):
     confidence = wings[wid]['confidence']
     mean = wings[wid]['mean']
-    if confidence > 0.008:
-        continue
     if math.isnan(confidence) or math.isnan(confidence):
         continue
     name, clas = wd.get_wing_details(int(wid))
+    if keep_wing in name.lower():
+        clas = "S"
+    else:
+        if confidence > 0.008:
+            continue
+        if clas not in clas_to_name:
+            print("Unknown class", clas)
+            continue
     classes.add(clas)
     print(f"{now}/{nbw} - {name} (#{wid})")
     data.append((
@@ -84,22 +103,11 @@ names = data[:,1]
 classes = list(classes)
 classes.sort()
 
-clas_to_name = {
-    "A": ("A", '#316625'), 
-    "B": ("B", '#37AD00'), 
-    "C": ("C", '#FFB300'), 
-    "D": ("D", '#ba2320'), 
-    "K": ("CCC", '#723277'), 
-    "O": ("No Certification", '#000000')
-}
-
 plt.figure(figsize=(9,20), dpi=400)
 plt.subplots_adjust(left=0.3,top=0.95, bottom=0.05)
 
-
 for clas in classes:
     indexes = np.where(data[:,2] == clas)[0]
-
     plt.barh(
         indexes,
         height[indexes].astype(float),
@@ -107,6 +115,7 @@ for clas in classes:
         label = clas_to_name[clas][0],
         color = clas_to_name[clas][1]
     )
+
 plt.yticks(np.arange(data.shape[0]),names, rotation=0, horizontalalignment="right", fontsize=7)
 plt.xlim(6.2, 8.1)
 plt.gca().invert_yaxis()
