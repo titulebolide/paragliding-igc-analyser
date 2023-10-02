@@ -12,15 +12,10 @@ import argparse
 import os
 import utils
 
-logging.basicConfig(level=logging.INFO)
-
-input_file = "../data/full/flights_analysed.json"
-output_file = "../data/full/flights_post_processed.dat"
-
 def post_process_analysis(flights):
     wings_to_flight = {}
     total_flights_to_analyse = 0
-    logging.info("Reindexing")
+    print("Reindexing")
     for id,f in flights.items():
         if f is None:
             continue
@@ -34,7 +29,7 @@ def post_process_analysis(flights):
         total_flights_to_analyse += 1
 
     wings_perf = {}
-    logging.info(f"Calculating average and standart deviation on {total_flights_to_analyse} flights")
+    print(f"Calculating average and standart deviation on {total_flights_to_analyse} flights")
     no_iter = 0
     for wing_id in wings_to_flight:
         wings_perf[wing_id] = {}
@@ -51,7 +46,7 @@ def post_process_analysis(flights):
             weight += sampling*len(ga)
             nb_sample += len(ga)
             if no_iter % 10000 == 0:
-                logging.info(f"{round(no_iter/total_flights_to_analyse*100,1)} %")
+                print(f"{round(no_iter/total_flights_to_analyse*100,1)} %")
             no_iter += 1
 
         mean = sum_av/weight
@@ -65,13 +60,13 @@ def post_process_analysis(flights):
 
 
 def main(infile, outfile):
-    logging.info("Loading flight file")
+    print("Loading flight file")
     with open(infile, "r") as f:
         flights = json.load(f)
 
     wings_perf = post_process_analysis(flights)
 
-    logging.info("Saving results")
+    print("Saving results")
     with open(outfile, "wb") as f:
         pickle.dump(wings_perf, f)
 
