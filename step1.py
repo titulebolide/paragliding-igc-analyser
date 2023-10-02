@@ -1,5 +1,5 @@
 """
-Analyses the row flight data in order to extract 
+Analyses the raw flight data in order to extract 
 the glide angle throughout the flight
 """
 
@@ -8,12 +8,11 @@ import os
 import logging
 import json
 import time
+import argparse
+import utils
 
 logging.basicConfig(level=logging.INFO)
 
-igc_folder = "../data/full/"
-flight_data_file = "../data/full/flights.json"
-output_file = "../data/full/flights_analysed.json"
 
 def process_single_file(path):
     t = TrackAnalyser(path)
@@ -34,7 +33,7 @@ def format_eta(secs):
     hms = ["0"*int(len(str(i)) == 1) + str(i) for i in hms]
     return ":".join(hms)
 
-def process_folder(flights):
+def process_folder(igc_indir, flights):
     no_file = -1
     nb_tot_file = len(flights)
     time_start = time.time()
@@ -50,7 +49,7 @@ def process_folder(flights):
         if not 'gps' in flights[flight_id] or not 'wing' in flights[flight_id]:
             logging.debug(f"{flight_id} has incomplete data")
             continue
-        path = os.path.join(igc_folder, flights[flight_id]['gps'])
+        path = os.path.join(igc_indir, flights[flight_id]['gps'])
         ga, mtd = None, None
         try:
             ga, mtd = process_single_file(path)
@@ -66,30 +65,45 @@ def process_folder(flights):
             perc = (no_file+1)/nb_tot_file
             elapsed_time = time.time() - time_start
             eta = int(elapsed_time / perc * (1 - perc))
-            
-
         print(f"{round(perc*100,1)} % - ETA {format_eta(eta)} - {path}" + " "*30, end="\r")
 
-def yesno(text, default_yes=True):
-    choice_text = "[Y/n]" if default_yes else "[y/N]"
-    reject_match = ("n", "no") if default_yes else ("y", "yes")
-    res = input(f"{text} {choice_text} ")
-    return res.lower() not in reject_match
-
-def main():
-    with open(flight_data_file, "r") as f:
+def main(igc_indir, flight_infile, outfile):
+    with open(flight_infile, "r") as f:
         flights = json.load(f)
     try:
-        process_folder(flights)
+        process_folder(igc_indir, flights)
     except KeyboardInterrupt:
-        print()
-        if yesno("Aborted. Save anyway?"):
-            if os.path.isfile(output_file):
-                if yesno("This file already exists. Override?", default_yes=False):
-                    with open(output_file, "w") as f:
-                        json.dump(flights, f)
-    with open(output_file, "w") as f:
+        if not utils.yesno("Aborted. Save anyway?"):
+            return
+    with open(outfile, "w") as f:
         json.dump(flights, f)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("indir", type=str, help="Input directory")
+    parser.add_argument("outfile", type=str, help="Output file")
+    args = parser.parse_args()
+
+    indir = os.path.abspath(args.indir)
+    igc_indir = os.path.join(indir, "igcfiles")
+    flight_infile = os.path.join(indir, "flight_data.json")
+    outfile = os.path.abspath(args.outfile)
+
+    if not os.path.exists(igc_indir) or not os.path.isfile(flight_infile):
+        print("The input directory is invalid. Exiting.")
+        exit(1)
+
+    if os.path.exists(outfile):
+        if not utils.yesno("This file already exists. Override?", default_yes=False):
+            print("Exiting.")
+            exit(0)
+
+    if not os.path.isdir(os.path.dirname(outfile)):
+        print(f"{os.path.dirname(outfile)} is not a valid directory. Exiting.")
+        exit(1)
+
+    if not outfile.endswith(".json"):
+        print("The output file must ends with the json extension. Exiting.")
+        exit(1)
+
+    main(igc_indir, flight_infile, outfile)
