@@ -8,6 +8,9 @@ import json
 import pickle
 import logging
 import numpy as np
+import argparse
+import os
+import utils
 
 logging.basicConfig(level=logging.INFO)
 
@@ -61,16 +64,45 @@ def post_process_analysis(flights):
     return wings_perf
 
 
-def main():
+def main(infile, outfile):
     logging.info("Loading flight file")
-    with open(input_file, "r") as f:
+    with open(infile, "r") as f:
         flights = json.load(f)
 
     wings_perf = post_process_analysis(flights)
 
     logging.info("Saving results")
-    with open(output_file, "wb") as f:
+    with open(outfile, "wb") as f:
         pickle.dump(wings_perf, f)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("infile", type=str, help="Input file")
+    parser.add_argument("outfile", type=str, help="Output file")
+    args = parser.parse_args()
+
+    infile = os.path.abspath(args.infile)
+    outfile = os.path.abspath(args.outfile)
+
+    if not os.path.isfile(infile):
+        print("The input file does not exits. Exiting.")
+        exit(1)
+
+    if not infile.endswith(".json"):
+        print("The input file must be a JSON file. Exiting.")
+        exit(1)
+
+    if not outfile.endswith(".json"):
+        print("The output file must ends with the json extension. Exiting.")
+        exit(1)
+
+    if os.path.exists(outfile):
+        if not utils.yesno("This file already exists. Override?", default_yes=False):
+            print("Exiting.")
+            exit(0)
+
+    if not os.path.isdir(os.path.dirname(outfile)):
+        print(f"{os.path.dirname(outfile)} is not a valid directory. Exiting.")
+        exit(1)
+
+    main(infile, outfile)
