@@ -92,8 +92,8 @@ if __name__ == "__main__":
         print("The input file must be a JSON file. Exiting.")
         exit(1)
 
-    if not outfile.endswith(".json"):
-        print("The output file must ends with the json extension. Exiting.")
+    if not outfile.endswith(".dat"):
+        print("The output file must ends with the .dat extension. Exiting.")
         exit(1)
 
     if os.path.exists(outfile):
