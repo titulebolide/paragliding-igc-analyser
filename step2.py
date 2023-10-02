@@ -4,11 +4,8 @@ in order to extract for each wing the average glide angle
 as well as the standard deviation
 """
 
-from bs4 import BeautifulSoup
-import requests
 import json
 import pickle
-import re
 import logging
 import numpy as np
 

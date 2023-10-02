@@ -3,10 +3,8 @@ Analyses the row flight data in order to extract
 the glide angle throughout the flight
 """
 
-import matplotlib.pyplot as plt
 from igc_analyser import TrackAnalyser
 import os
-import numpy as np
 import logging
 import json
 import time
