@@ -11,11 +11,8 @@ import re
 import pickle
 import os
 import numpy as np
+import argparse
 
-input_file = "../data/full/flights_post_processed.dat"
-
-with open(input_file, "rb") as f:
-    wings = pickle.load(f)
 
 class WingDetails:
     def __init__(self):
@@ -48,79 +45,97 @@ class WingDetails:
             self.cache[wing_id] = (name, clas)
         return self.cache[wing_id]
 
-wd = WingDetails()
-wd.load_cache()
-data = []
-nbw = len(wings)
-classes = set()
-keep_wing = "hook"
 
-clas_to_name = {
-    "A": ("A", '#316625'), 
-    "bi": ("Biplace", 'green'), 
-    "B": ("B", '#37AD00'), 
-    "C": ("C", '#FFB300'), 
-    "D": ("D", '#ba2320'), 
-    "K": ("CCC", '#723277'), 
-    "O": ("No Certification", '#000000'),
-    "S": (keep_wing.title(), "blue") # false class for the wing we want to keep
-}
+def main(infile):
+    with open(infile, "rb") as f:
+        wings = pickle.load(f)
 
-for now, wid in enumerate(wings):
-    confidence = wings[wid]['confidence']
-    mean = wings[wid]['mean']
-    if math.isnan(confidence) or math.isnan(confidence):
-        continue
-    name, clas = wd.get_wing_details(int(wid))
-    if keep_wing in name.lower():
-        clas = "S"
-    else:
-        if confidence > 0.008:
+    wd = WingDetails()
+    wd.load_cache()
+    data = []
+    nbw = len(wings)
+    classes = set()
+    keep_wing = "hook"
+
+    clas_to_name = {
+        "A": ("A", '#316625'), 
+        "bi": ("Biplace", 'green'), 
+        "B": ("B", '#37AD00'), 
+        "C": ("C", '#FFB300'), 
+        "D": ("D", '#ba2320'), 
+        "K": ("CCC", '#723277'), 
+        "O": ("No Certification", '#000000'),
+        "S": (keep_wing.title(), "blue") # false class for the wing we want to keep
+    }
+
+    for now, wid in enumerate(wings):
+        confidence = wings[wid]['confidence']
+        mean = wings[wid]['mean']
+        if math.isnan(confidence) or math.isnan(confidence):
             continue
-        if clas not in clas_to_name:
-            print("Unknown class", clas)
-            continue
-    classes.add(clas)
-    print(f"{now}/{nbw} - {name} (#{wid})")
-    data.append((
-        int(wid), #0
-        name, #1
-        clas, #2
-        utils.ga2gr(mean), #3
-        max(0, utils.ga2gr(mean + confidence) - utils.ga2gr(mean)), #4, upper error
-        max(0, utils.ga2gr(mean) - utils.ga2gr(mean - confidence)) #5, lower error
-    ))
-wd.write_cache()
-data.sort(key = lambda x : x[3])
+        name, clas = wd.get_wing_details(int(wid))
+        # if keep_wing in name.lower():
+        #     clas = "S"
+        # else:
+        #     if confidence > 0.008:
+        #         continue
+        #     if clas not in clas_to_name:
+        #         print("Unknown class", clas)
+        #         continue
+        classes.add(clas)
+        print(f"{now}/{nbw} - {name} (#{wid})")
+        data.append((
+            int(wid), #0
+            name, #1
+            clas, #2
+            utils.ga2gr(mean), #3
+            max(0, utils.ga2gr(mean + confidence) - utils.ga2gr(mean)), #4, upper error
+            max(0, utils.ga2gr(mean) - utils.ga2gr(mean - confidence)) #5, lower error
+        ))
+    wd.write_cache()
+    data.sort(key = lambda x : x[3])
 
-data = np.array(data)
+    data = np.array(data)
 
-lower_error = data[:,5]
-upper_error = data[:,4]
-height = data[:,3]
-names = data[:,1]
+    lower_error = data[:,5]
+    upper_error = data[:,4]
+    height = data[:,3]
+    names = data[:,1]
 
-classes = list(classes)
-classes.sort()
+    classes = list(classes)
+    classes.sort()
 
-plt.figure(figsize=(9,20), dpi=400)
-plt.subplots_adjust(left=0.3,top=0.95, bottom=0.05)
+    plt.figure(figsize=(9,20), dpi=400)
+    plt.subplots_adjust(left=0.3,top=0.95, bottom=0.05)
 
-for clas in classes:
-    indexes = np.where(data[:,2] == clas)[0]
-    plt.barh(
-        indexes,
-        height[indexes].astype(float),
-        xerr = (lower_error[indexes].astype(float), upper_error[indexes].astype(float)),
-        label = clas_to_name[clas][0],
-        color = clas_to_name[clas][1]
-    )
+    for clas in classes:
+        indexes = np.where(data[:,2] == clas)[0]
+        plt.barh(
+            indexes,
+            height[indexes].astype(float),
+            xerr = (lower_error[indexes].astype(float), upper_error[indexes].astype(float)),
+            label = clas_to_name[clas][0],
+            color = clas_to_name[clas][1]
+        )
 
-plt.yticks(np.arange(data.shape[0]),names, rotation=0, horizontalalignment="right", fontsize=7)
-plt.xlim(6.2, 8.1)
-plt.gca().invert_yaxis()
-plt.tick_params(labeltop=True)
-plt.legend()
-plt.grid(axis='x')
-plt.xlabel('Glide ratio')
-plt.savefig("graph.png")
+    plt.yticks(np.arange(data.shape[0]),names, rotation=0, horizontalalignment="right", fontsize=7)
+    plt.xlim(6.2, 8.1)
+    plt.gca().invert_yaxis()
+    plt.tick_params(labeltop=True)
+    plt.legend()
+    plt.grid(axis='x')
+    plt.xlabel('Glide ratio')
+    plt.savefig("graph.png")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("infile", type=str, help="Input file")
+    args = parser.parse_args()
+
+    infile = os.path.abspath(args.infile)
+
+    if not infile.endswith(".dat"):
+        print("The input file must be a DAT file. Exiting.")
+        exit(1)
+
+    main(infile)
