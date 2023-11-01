@@ -28,10 +28,10 @@ def process_single_file(path):
     ga_filt = [val for pos, val in enumerate(t.glide_angles) if t.glide_mask[pos] == 1]
     outfile = path.replace(".igc", ".json")
     with open(outfile, "w") as f:
-        json.dumps({
+        json.dump({
             "glide_angles": ga_filt,
             "sampling": t.track_mean_time_delta,
-        })
+        }, f)
 
 def format_eta(secs):
     hms = [secs//3600, secs%3600//60, secs%3600%60]
