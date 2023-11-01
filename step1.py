@@ -74,18 +74,12 @@ if __name__ == "__main__":
     parser.add_argument("workdir", type=str, help="Work directory")
     args = parser.parse_args()
 
-    indir = os.path.abspath(args.workdir)
-    igc_indir = os.path.join(indir, "igcfiles")
-    flight_infile = os.path.join(indir, "flight_data.json")
-    outfile = os.path.join(indir, "flights_analysed.json")
+    workdir = os.path.abspath(args.workdir)
+    igc_indir = os.path.join(workdir, "igcfiles")
+    flight_infile = utils.get_flight_json_file()
 
     if not os.path.exists(igc_indir) or not os.path.isfile(flight_infile):
         print("The input directory is invalid. Exiting.")
         exit(1)
 
-    if os.path.exists(outfile):
-        if not utils.yesno("This file already exists. Override?", default_yes=False):
-            print("Exiting.")
-            exit(0)
-
-    main(igc_indir, flight_infile, outfile)
+    main(igc_indir, flight_infile)
