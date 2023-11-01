@@ -80,14 +80,13 @@ def main(igc_indir, flight_infile, outfile):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("indir", type=str, help="Input directory")
-    parser.add_argument("outfile", type=str, help="Output file")
+    parser.add_argument("indir", type=str, help="Work directory")
     args = parser.parse_args()
 
     indir = os.path.abspath(args.indir)
     igc_indir = os.path.join(indir, "igcfiles")
     flight_infile = os.path.join(indir, "flight_data.json")
-    outfile = os.path.abspath(args.outfile)
+    outfile = os.path.join(args.indir, "flights_analysed.json")
 
     if not os.path.exists(igc_indir) or not os.path.isfile(flight_infile):
         print("The input directory is invalid. Exiting.")
