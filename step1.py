@@ -11,7 +11,7 @@ import time
 import argparse
 import utils
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 def process_single_file(path):
@@ -62,13 +62,14 @@ def process_folder(igc_indir, flights):
             perc = (no_file+1)/nb_tot_file
             elapsed_time = time.time() - time_start
             eta = int(elapsed_time / perc * (1 - perc))
-        print(f"{round(perc*100,1)} % - ETA {format_eta(eta)} - {path}" + " "*30, end="\r")
+        print(f"{round(perc*100,1)} % - ETA {format_eta(eta)} - {flights[flight_id]['gps']}" + " "*30, end="\r")
+    return flights
 
 def main(igc_indir, flight_infile, outfile):
     with open(flight_infile, "r") as f:
         flights = json.load(f)
     try:
-        process_folder(igc_indir, flights)
+        flights = process_folder(igc_indir, flights)
     except KeyboardInterrupt:
         if not utils.yesno("Aborted. Save anyway?"):
             return
