@@ -4,3 +4,4 @@ cache/
 *.png
 venv/
 data/
+*_ffvl_data_extractor/
