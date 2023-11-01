@@ -138,17 +138,16 @@ def get_flight_data(outdir, ids, batch_size = 1000, save_data = True):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("outdir", type=str, default=".", help="The directory where to save the data.")
+    parser.add_argument("-d", "--workdir", type=str, default="", help="The directory where to save the data.")
     args = parser.parse_args()
 
-    outdir = os.path.abspath(args.outdir)
+    outdir = args.workdir
 
-    if not os.path.isdir(outdir):
-        print("The given output directory does not exists.")
-        exit(1)
+    if outdir == "":
+        strtime = dt.datetime.strftime(dt.datetime.now(), "%Y%m%d_%H%M%S")
+        outdir = os.path.join(".", f"{strtime}_ffvl_data_extractor")
 
-    strtime = dt.datetime.strftime(dt.datetime.now(), "%Y%m%d_%H%M%S")
-    outdir = os.path.join(outdir, f"{strtime}_ffvl_data_extractor")
+    outdir = os.path.abspath(outdir)
 
     if os.path.exists(outdir):
         print(f"{outdir} already exists. Exiting.")
