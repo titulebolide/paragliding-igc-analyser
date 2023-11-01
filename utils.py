@@ -10,6 +10,6 @@ def gr2ga(gr):
 
 def yesno(text, default_yes=True):
     choice_text = "[Y/n]" if default_yes else "[y/N]"
-    reject_match = ("n", "no") if default_yes else ("y", "yes")
+    match = ("n", "no") if default_yes else ("y", "yes")
     res = input(f"{text} {choice_text} ")
-    return res.lower() not in reject_match
+    return default_yes if (res.lower() not in match) else not default_yes
