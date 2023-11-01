@@ -11,20 +11,24 @@ import argparse
 import os
 import utils
 
-def post_process_analysis(flights):
+
+
+def main(workdir):
+    with open(utils.get_flight_json_file(workdir), "r") as f:
+        flights = json.load(f)
     wings_to_flight = {}
     total_flights_to_analyse = 0
     print("Reindexing")
-    for id,f in flights.items():
-        if f is None:
+    for flight_id,flight in flights.items():
+        if flight is None:
             continue
-        if not "wing" in f or not "glide_angles" in f or not "sampling" in f:
+        if not os.path.isfile(utils.get_json_file_path_from_igc(workdir, flight["gps"])):
             continue
-        wing_id = int(f["wing"])
+        wing_id = int(flight["wing"])
         if wing_id in wings_to_flight:
-            wings_to_flight[wing_id].append(id)
+            wings_to_flight[wing_id].append(flight_id)
         else:
-            wings_to_flight[wing_id] = [id]
+            wings_to_flight[wing_id] = [flight_id]
         total_flights_to_analyse += 1
 
     wings_perf = {}
@@ -37,9 +41,10 @@ def post_process_analysis(flights):
         weight = 0
         nb_sample = 0
         for flight_id in wings_to_flight[wing_id]:
-            f = flights[flight_id]
-            ga = np.array(f['glide_angles'])
-            sampling = f['sampling']
+            with open(utils.get_json_file_path_from_igc(workdir, flights[flight_id]["gps"]), "r") as f:
+                flight_data = json.load(f)
+            ga = np.array(flight_data['glide_angles'])
+            sampling = flight_data['sampling']
             sum_av += np.sum(ga)*sampling
             sum_sq += np.sum(ga**2)*sampling
             weight += sampling*len(ga)
@@ -55,18 +60,8 @@ def post_process_analysis(flights):
         wings_perf[wing_id]['dev_hist'] = std_deviation
         wings_perf[wing_id]['confidence'] = confidence_95
 
-    return wings_perf
-
-
-def main(infile, outfile):
-    print("Loading flight file")
-    with open(infile, "r") as f:
-        flights = json.load(f)
-
-    wings_perf = post_process_analysis(flights)
-
     print("Saving results")
-    with open(outfile, "wb") as f:
+    with open(utils.get_stat_file(workdir), "wb") as f:
         pickle.dump(wings_perf, f)
 
 if __name__ == "__main__":
@@ -75,20 +70,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     workdir = os.path.abspath(args.workdir)
-    infile = os.path.join(workdir, "flights_analysed.json")
-    outfile = os.path.join(workdir, "flights_stats.dat")
 
-    if not os.path.isfile(infile):
-        print("The input file does not exits. Exiting.")
-        exit(1)
+    if not os.path.isfile(utils.get_flight_json_file(workdir)):
+        print("The working directory is not correct.")
 
-    if os.path.exists(outfile):
-        if not utils.yesno("This file already exists. Override?", default_yes=False):
-            print("Exiting.")
-            exit(0)
-
-    if not os.path.isdir(os.path.dirname(outfile)):
-        print(f"{os.path.dirname(outfile)} is not a valid directory. Exiting.")
-        exit(1)
-
-    main(infile, outfile)
+    main(workdir)
