@@ -16,9 +16,7 @@ import datetime as dt
 import sys 
 import traceback
 import argparse
-
-def get_track_save_dir(workdir, batch_no):
-    return os.path.join(outdir, "igcfiles", str(batch_no))
+import utils
 
 def get_ffvl_no_dns(url):
     return requests.get(
@@ -88,7 +86,7 @@ def get_single_flight_data(flight_id, workdir, batch_no):
     gps_track = gps_track['href'].split('/')[-1]
     wing_id = wing_id['href'].split('/')[-1]
 
-    igcfile_path = os.path.join(get_track_save_dir(workdir, batch_no), gps_track)
+    igcfile_path = os.path.join(utils.get_track_save_dir(workdir, batch_no), gps_track)
     get_single_flight_track(gps_track, igcfile_path)
     return {"gps" : os.path.join(str(batch_no), gps_track), "wing" : wing_id}
 
@@ -109,7 +107,7 @@ def get_flight_data(outdir, ids, batch_size = 1000, save_data = True):
     bar = Bar('Processing', max=len(ids), suffix='%(percent).1f %% -- %(elapsed)d s -- %(eta)d s')
     flight_data = {}
     for batch_no in range(0, len(ids)//batch_size + 1):
-        os.makedirs(get_track_save_dir(outdir, batch_no))
+        os.makedirs(utils.get_track_save_dir(outdir, batch_no))
         with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
             futures = {}
             for id in ids[batch_no*batch_size:(batch_no+1)*batch_size]:
