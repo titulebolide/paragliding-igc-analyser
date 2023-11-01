@@ -26,7 +26,12 @@ def process_single_file(path):
             return None, None
     t.process(use_baro=use_baro)
     ga_filt = [val for pos, val in enumerate(t.glide_angles) if t.glide_mask[pos] == 1]
-    return ga_filt, t.track_mean_time_delta
+    outfile = path.replace(".igc", ".json")
+    with open(outfile, "w") as f:
+        json.dumps({
+            "glide_angles": ga_filt,
+            "sampling": t.track_mean_time_delta,
+        })
 
 def format_eta(secs):
     hms = [secs//3600, secs%3600//60, secs%3600%60]
@@ -47,34 +52,22 @@ def process_folder(igc_indir, flights):
             logging.debug(f"{flight_id} has incomplete data")
             continue
         path = os.path.join(igc_indir, flights[flight_id]['gps'])
-        ga, mtd = None, None
         try:
-            ga, mtd = process_single_file(path)
+            process_single_file(path)
         except Exception as e:
             logging.debug(e)
             continue
-        if ga is None or mtd is None:
-            continue
-        flights[flight_id]['glide_angles'] = ga
-        flights[flight_id]['sampling'] = mtd
 
         if (no_file%50) == 0:
             perc = (no_file+1)/nb_tot_file
             elapsed_time = time.time() - time_start
             eta = int(elapsed_time / perc * (1 - perc))
         print(f"{round(perc*100,1)} % - ETA {format_eta(eta)} - {flights[flight_id]['gps']}" + " "*30, end="\r")
-    return flights
 
-def main(igc_indir, flight_infile, outfile):
+def main(igc_indir, flight_infile):
     with open(flight_infile, "r") as f:
         flights = json.load(f)
-    try:
-        flights = process_folder(igc_indir, flights)
-    except KeyboardInterrupt:
-        if not utils.yesno("Aborted. Save anyway?"):
-            return
-    with open(outfile, "w") as f:
-        json.dump(flights, f)
+    flights = process_folder(igc_indir, flights)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
