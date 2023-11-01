@@ -38,9 +38,6 @@ def process_folder(igc_indir, flights):
     nb_tot_file = len(flights)
     time_start = time.time()
     perc = 0
-    eta_hours = 0
-    eta_min = 0
-    eta_sec = 0
     for flight_id in flights:
         no_file += 1
         if flights[flight_id] is None:
@@ -80,13 +77,13 @@ def main(igc_indir, flight_infile, outfile):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("indir", type=str, help="Work directory")
+    parser.add_argument("workdir", type=str, help="Work directory")
     args = parser.parse_args()
 
-    indir = os.path.abspath(args.indir)
+    indir = os.path.abspath(args.workdir)
     igc_indir = os.path.join(indir, "igcfiles")
     flight_infile = os.path.join(indir, "flight_data.json")
-    outfile = os.path.join(args.indir, "flights_analysed.json")
+    outfile = os.path.join(indir, "flights_analysed.json")
 
     if not os.path.exists(igc_indir) or not os.path.isfile(flight_infile):
         print("The input directory is invalid. Exiting.")
@@ -96,13 +93,5 @@ if __name__ == "__main__":
         if not utils.yesno("This file already exists. Override?", default_yes=False):
             print("Exiting.")
             exit(0)
-
-    if not os.path.isdir(os.path.dirname(outfile)):
-        print(f"{os.path.dirname(outfile)} is not a valid directory. Exiting.")
-        exit(1)
-
-    if not outfile.endswith(".json"):
-        print("The output file must ends with the json extension. Exiting.")
-        exit(1)
 
     main(igc_indir, flight_infile, outfile)
