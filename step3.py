@@ -129,13 +129,13 @@ def main(infile):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("infile", type=str, help="Input file")
+    parser.add_argument("workdir", type=str, help="Working directory")
     args = parser.parse_args()
 
-    infile = os.path.abspath(args.infile)
+    infile = utils.get_stat_file(args.workdir)
 
-    if not infile.endswith(".dat"):
-        print("The input file must be a DAT file. Exiting.")
+    if not os.path.exists(infile):
+        print("The input file does not exits. Exiting.")
         exit(1)
 
     main(infile)
