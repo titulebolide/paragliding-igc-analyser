@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     workdir = os.path.abspath(args.workdir)
     igc_indir = os.path.join(workdir, "igcfiles")
-    flight_infile = utils.get_flight_json_file()
+    flight_infile = utils.get_flight_json_file(workdir)
 
     if not os.path.exists(igc_indir) or not os.path.isfile(flight_infile):
         print("The input directory is invalid. Exiting.")
