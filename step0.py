@@ -17,6 +17,9 @@ import sys
 import traceback
 import argparse
 
+def get_track_save_dir(workdir, batch_no):
+    return os.path.join(outdir, "igcfiles", str(batch_no))
+
 def get_ffvl_no_dns(url):
     return requests.get(
         f"https://54.36.26.32/{url}",
@@ -68,7 +71,7 @@ def _is_flight_url(href):
     if href is None: return False
     return href.startswith("/sites/parapente.ffvl.fr/files/igcfiles/")
 
-def get_single_flight_data(flight_id, igcfile_save_folder):
+def get_single_flight_data(flight_id, workdir, batch_no):
     url = f"/cfd/liste/vol/{flight_id}"
     html = None
     while html is None:
@@ -85,10 +88,9 @@ def get_single_flight_data(flight_id, igcfile_save_folder):
     gps_track = gps_track['href'].split('/')[-1]
     wing_id = wing_id['href'].split('/')[-1]
 
-    igcfile_path = os.path.join(igcfile_save_folder, gps_track)
+    igcfile_path = os.path.join(get_track_save_dir(workdir, batch_no), gps_track)
     get_single_flight_track(gps_track, igcfile_path)
-
-    return {"gps" : igcfile_path, "wing" : wing_id}
+    return {"gps" : os.path.join(str(batch_no), gps_track), "wing" : wing_id}
 
 def get_single_flight_track(filename, path):
     url = f"/sites/parapente.ffvl.fr/files/igcfiles/{filename}"
@@ -98,7 +100,7 @@ def get_single_flight_track(filename, path):
             igcfile = get_ffvl_no_dns(url).text
         except (requests.RequestException):
             igcfile = None
-            print(f"Failed to pull id {flight_id}, retrying in 5s")
+            print(f"Failed to pull id {filename}, retrying in 5s")
             time.sleep(5)
     with open(path, "w") as f:
         f.write(igcfile)
@@ -107,12 +109,11 @@ def get_flight_data(outdir, ids, batch_size = 1000, save_data = True):
     bar = Bar('Processing', max=len(ids), suffix='%(percent).1f %% -- %(elapsed)d s -- %(eta)d s')
     flight_data = {}
     for batch_no in range(0, len(ids)//batch_size + 1):
-        igcfile_save_folder = os.path.join(outdir, "igcfiles", str(batch_no))
-        os.makedirs(igcfile_save_folder)
+        os.makedirs(get_track_save_dir(outdir, batch_no))
         with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
             futures = {}
             for id in ids[batch_no*batch_size:(batch_no+1)*batch_size]:
-                future = executor.submit(lambda x : get_single_flight_data(x, igcfile_save_folder), id)
+                future = executor.submit(lambda x : get_single_flight_data(x, outdir, batch_no), id)
                 future.add_done_callback(lambda x: bar.next())
                 futures[id] = future
             try:
