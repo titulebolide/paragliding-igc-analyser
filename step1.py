@@ -22,7 +22,7 @@ def process_single_file(path):
         if sanity == 0: break
     if sanity != 0:
         if t.check_track_sanity(use_baro=use_baro):
-            logging.debug(f"{path} is not safe to extract data from, sanity : {sanity}")
+            logging.debug(f"{'/'.join(path.split('/')[-2:])} is not safe to extract data from, sanity : {sanity}")
             return None, None
     t.process(use_baro=use_baro)
     ga_filt = [val for pos, val in enumerate(t.glide_angles) if t.glide_mask[pos] == 1]
