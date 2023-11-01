@@ -6,7 +6,6 @@ as well as the standard deviation
 
 import json
 import pickle
-import logging
 import numpy as np
 import argparse
 import os
@@ -72,23 +71,15 @@ def main(infile, outfile):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("infile", type=str, help="Input file")
-    parser.add_argument("outfile", type=str, help="Output file")
+    parser.add_argument("workdir", type=str, help="Work directory")
     args = parser.parse_args()
 
-    infile = os.path.abspath(args.infile)
-    outfile = os.path.abspath(args.outfile)
+    workdir = os.path.abspath(args.workdir)
+    infile = os.path.join(workdir, "flights_analysed.json")
+    outfile = os.path.join(workdir, "flights_stats.dat")
 
     if not os.path.isfile(infile):
         print("The input file does not exits. Exiting.")
-        exit(1)
-
-    if not infile.endswith(".json"):
-        print("The input file must be a JSON file. Exiting.")
-        exit(1)
-
-    if not outfile.endswith(".dat"):
-        print("The output file must ends with the .dat extension. Exiting.")
         exit(1)
 
     if os.path.exists(outfile):
