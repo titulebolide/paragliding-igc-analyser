@@ -10,9 +10,9 @@ import json
 import time
 import argparse
 import utils
+import multiprocessing as mp
 
 logging.basicConfig(level=logging.DEBUG)
-
 
 def process_single_file(path):
     t = TrackAnalyser(path)
@@ -40,9 +40,8 @@ def format_eta(secs):
 
 def process_folder(igc_indir, flights):
     no_file = -1
-    nb_tot_file = len(flights)
     time_start = time.time()
-    perc = 0
+    paths = []
     for flight_id in flights:
         no_file += 1
         if flights[flight_id] is None:
@@ -52,17 +51,21 @@ def process_folder(igc_indir, flights):
             logging.debug(f"{flight_id} has incomplete data")
             continue
         path = os.path.join(igc_indir, flights[flight_id]['gps'])
-        try:
-            process_single_file(path)
-        except Exception as e:
-            logging.debug(e)
-            continue
+        paths.append(path)
 
-        if (no_file%50) == 0:
-            perc = (no_file+1)/nb_tot_file
-            elapsed_time = time.time() - time_start
-            eta = int(elapsed_time / perc * (1 - perc))
-        print(f"{round(perc*100,1)} % - ETA {format_eta(eta)} - {flights[flight_id]['gps']}" + " "*30, end="\r")
+    p = mp.Pool()
+    rs = p.imap_unordered(process_single_file, paths)
+    percentage = 0
+    while percentage < 99.9:
+        percentage = rs._index / len(paths) * 100
+        elapsed_time = time.time() - time_start
+        eta = 1000000000
+        if percentage != 0:
+            eta = int(elapsed_time / percentage * (1 - percentage))
+        print(f"{round(percentage,1)} % - ETA {format_eta(eta)}" + " " * 20, end="\r")
+        time.sleep(1)
+    p.close()
+    p.join()
 
 def main(igc_indir, flight_infile):
     with open(flight_infile, "r") as f:
