@@ -37,11 +37,16 @@ class WingDetails:
         if wing_id not in self.cache:
             html = requests.get("https://parapente.ffvl.fr/cfd/liste/aile/" + str(wing_id)).text
             soup = BeautifulSoup(html, 'html.parser')
-            name = re.compile("avec une (.*) \| Parapente").findall(soup.find('title').text)[0]
+            try:
+                name = re.compile("avec une (.*) \| Parapente").findall(soup.find('title').text)[0]
+            except IndexError:
+                name = "Unknown"
             try:
                 clas = soup.tbody.find("tr").findAll("td")[9].a.font.text
             except AttributeError:
                 clas = "O"
+            # fix for wid 1294
+            if clas == "bj": clas = "bi"
             self.cache[wing_id] = (name, clas)
         return self.cache[wing_id]
 
@@ -71,7 +76,7 @@ def main(infile):
     for now, wid in enumerate(wings):
         confidence = wings[wid]['confidence']
         mean = wings[wid]['mean']
-        if math.isnan(confidence) or math.isnan(confidence):
+        if math.isnan(confidence):
             continue
         name, clas = wd.get_wing_details(int(wid))
         # if keep_wing in name.lower():
