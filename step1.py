@@ -26,12 +26,10 @@ def process_single_file(path):
             return None, None
     t.process(use_baro=use_baro)
     ga_filt = [val for pos, val in enumerate(t.glide_angles) if t.glide_mask[pos] == 1]
-    spd_filt = [val for pos, val in enumerate(t.straight_line_speeds) if t.glide_mask[pos] == 1]
     outfile = path.replace(".igc", ".json")
     with open(outfile, "w") as f:
         json.dump({
             "glide_angles": ga_filt,
-            "speed": spd_filt,
             "sampling": t.track_mean_time_delta,
         }, f)
 
