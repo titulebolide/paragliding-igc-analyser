@@ -58,13 +58,13 @@ def process_folder(igc_indir, flights):
     p = mp.Pool()
     rs = p.imap_unordered(process_single_file, paths)
     percentage = 0
-    while percentage < 99.9:
-        percentage = rs._index / len(paths) * 100
+    while percentage < .999:
+        percentage = rs._index / len(paths)
         elapsed_time = time.time() - time_start
         eta = 1000000000
         if percentage != 0:
             eta = int(elapsed_time / percentage * (1 - percentage))
-        print(f"{round(percentage,1)} % - ETA {format_eta(eta)}" + " " * 20, end="\r")
+        print(f"{round(percentage*100,1)} % - ETA {format_eta(eta)}")
         time.sleep(1)
     p.close()
     p.join()
