@@ -12,7 +12,7 @@ import argparse
 import utils
 import multiprocessing as mp
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 def process_single_file(path):
     t = TrackAnalyser(path)
@@ -40,7 +40,7 @@ def format_eta(secs):
     hms = ["0"*int(len(str(i)) == 1) + str(i) for i in hms]
     return ":".join(hms)
 
-def process_folder(igc_indir, flights):
+def process_folder(igc_indir, flights, njobs):
     no_file = -1
     time_start = time.time()
     paths = []
@@ -55,7 +55,7 @@ def process_folder(igc_indir, flights):
         path = os.path.join(igc_indir, flights[flight_id]['gps'])
         paths.append(path)
 
-    p = mp.Pool()
+    p = mp.Pool(njobs)
     rs = p.imap_unordered(process_single_file, paths)
     percentage = 0
     while percentage < .999:
@@ -69,14 +69,15 @@ def process_folder(igc_indir, flights):
     p.close()
     p.join()
 
-def main(igc_indir, flight_infile):
+def main(igc_indir, flight_infile, njobs):
     with open(flight_infile, "r") as f:
         flights = json.load(f)
-    flights = process_folder(igc_indir, flights)
+    flights = process_folder(igc_indir, flights, njobs)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("workdir", type=str, help="Work directory")
+    parser.add_argument("-j", "--jobs", default=None, help="Parallel jobs number. Default: Number of cores")
     args = parser.parse_args()
 
     workdir = os.path.abspath(args.workdir)
@@ -87,4 +88,4 @@ if __name__ == "__main__":
         print("The input directory is invalid. Exiting.")
         exit(1)
 
-    main(igc_indir, flight_infile)
+    main(igc_indir, flight_infile, args.jobs)
