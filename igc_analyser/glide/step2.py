@@ -11,7 +11,7 @@ import pickle
 
 import numpy as np
 
-import utils
+from .. import utils
 
 
 def main(workdir):

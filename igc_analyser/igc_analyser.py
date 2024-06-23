@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from haversine import haversine
 
-from igc_reader import IGCReader
-from utils import *
+from .igc_reader import IGCReader
+from .utils import *
 
 
 class TrackAnalyser:

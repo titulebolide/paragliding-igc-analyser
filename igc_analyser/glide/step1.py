@@ -11,8 +11,8 @@ import os
 import random
 import time
 
-import utils
-from igc_analyser import TrackAnalyser
+from .. import utils
+from ..igc_analyser import TrackAnalyser
 
 logging.basicConfig(level=logging.INFO)
 
