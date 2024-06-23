@@ -26,6 +26,7 @@ def process_single_file(path):
             logging.debug(f"{'/'.join(path.split('/')[-2:])} is not safe to extract data from, sanity : {sanity}")
             return None, None
     t.process(use_baro=use_baro)
+    t.calc_glide_mask()
     ga_filt = [val for pos, val in enumerate(t.glide_angles) if t.glide_mask[pos] == 1]
     outfile = path.replace(".igc", ".json")
     with open(outfile, "w") as f:

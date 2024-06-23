@@ -26,10 +26,6 @@ class TrackAnalyser:
         self.track = IGCReader(filename)
         self.track_mean_time_delta = self.track.mean_time_delta()
 
-    def process(self, use_baro = True):
-        self._process_track(use_baro = use_baro)
-        self._calc_glide_mask()
-
     def check_track_sanity(self, use_baro = True):
         """
         checks track sanity
@@ -48,7 +44,7 @@ class TrackAnalyser:
             return 3
         return 0
 
-    def _process_track(self, use_baro = True):
+    def process(self, use_baro = True):
         frame_len = round(self.frame_len_sec/self.track_mean_time_delta)
         altitude = self.track.altitude_baro if use_baro else self.track.altitude_gnss
         glide_angle = []
@@ -123,7 +119,7 @@ class TrackAnalyser:
         self.straight_line_speeds = np.array(straight_line_speed)
         self.cumulative_distance = np.array(cum_distance)
 
-    def _calc_glide_mask(self):
+    def calc_glide_mask(self):
         min_iter = round(self.min_sec/self.track_mean_time_delta)
 
         mask = (
