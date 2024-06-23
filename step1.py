@@ -10,6 +10,7 @@ import json
 import time
 import argparse
 import utils
+import random
 import multiprocessing as mp
 
 logging.basicConfig(level=logging.INFO)
@@ -52,6 +53,9 @@ def process_folder(igc_indir, flights, njobs):
             continue
         path = os.path.join(igc_indir, flights[flight_id]['gps'])
         paths.append(path)
+    # shuffle the paths to improve ETA estimate
+    # without it, the first files are often the smaller, thus the ETA was underestimated
+    paths = random.shuffle(paths)
 
     p = mp.Pool(njobs)
     rs = p.imap_unordered(process_single_file, paths)
