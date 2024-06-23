@@ -5,7 +5,6 @@ Scrapes the FFVL website in order to gather the necessary data
 import requests
 import urllib3
 from bs4 import BeautifulSoup
-from urllib3.exceptions import NewConnectionError
 
 urllib3.disable_warnings()
 import argparse
@@ -13,13 +12,57 @@ import concurrent.futures
 import datetime as dt
 import json
 import os
+import pickle
+import re
 import sys
 import time
 import traceback
 
 from progress.bar import Bar
 
-import utils
+from . import utils
+
+
+class WingDetails:
+    def __init__(self):
+        self.cache_dir = "./cache"
+        self.cache_filename = "wing_details.dat"
+        self.cachefile = os.path.join(self.cache_dir, self.cache_filename)
+        self.cache = {}
+        if not os.path.isdir(self.cache_dir):
+            os.makedirs(self.cache_dir)
+
+    def load_cache(self):
+        if os.path.isfile(self.cachefile):
+            with open(self.cachefile, "rb") as f:
+                self.cache = pickle.load(f)
+
+    def write_cache(self):
+        with open(self.cachefile, "wb") as f:
+            pickle.dump(self.cache, f)
+
+    def get_wing_details(self, wing_id):
+        wing_id = int(wing_id)
+        if wing_id not in self.cache:
+            html = requests.get(
+                "https://parapente.ffvl.fr/cfd/liste/aile/" + str(wing_id)
+            ).text
+            soup = BeautifulSoup(html, "html.parser")
+            try:
+                name = re.compile(r"avec une (.*) | Parapente").findall(
+                    soup.find("title").text
+                )[0]
+            except IndexError:
+                name = "Unknown"
+            try:
+                clas = soup.tbody.find("tr").findAll("td")[9].a.font.text
+            except AttributeError:
+                clas = "O"
+            # fix for wid 1294
+            if clas == "bj":
+                clas = "bi"
+            self.cache[wing_id] = (name, clas)
+        return self.cache[wing_id]
 
 
 def get_ffvl_no_dns(url):
