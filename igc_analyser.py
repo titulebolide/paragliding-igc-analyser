@@ -152,6 +152,21 @@ class TrackAnalyser:
         self._unfiltered_glide_mask = mask
         self.glide_mask = mask_filtered
 
+    def get_clockwise_thermalling_ratio(self):
+        mask_cw = (
+            self.turn_speeds < -self.max_turn
+        ).astype(int)*(
+            self.glide_angles > 0
+        ).astype(int)
+    
+        mask_ccw = (
+            self.turn_speeds > self.max_turn
+        ).astype(int)*(
+            self.glide_angles > 0
+        ).astype(int)
+
+        return sum(mask_cw) / (sum(mask_cw) + sum(mask_ccw)), self.track_mean_time_delta*(sum(mask_cw) + sum(mask_ccw))
+
     def get_glide_ratio(self):
         ga_filt = [val for pos, val in enumerate(self.glide_angles) if self.glide_mask[pos] == 1]
         gr = -1/math.tan(sum(ga_filt)/len(ga_filt)/180*math.pi)
