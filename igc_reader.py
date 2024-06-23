@@ -69,9 +69,6 @@ class IGCReader:
         plt.plot(self.altitude_baro)
         plt.show()
 
-    def _get_data_index(noindex):
-        return [p[noindex] for p in self.data_formated]
-
     def mean_time_delta(self):
         return np.mean(np.diff(self.timestamp))
         
